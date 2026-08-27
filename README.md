@@ -24,6 +24,22 @@ npx hardhat test
 npx hardhat run scripts/deploy.js --network sepolia
 ```
 
+## Verify on Etherscan (Sepolia)
+
+1. Set env vars in `.env`:
+
+```bash
+ETHERSCAN_API_KEY=...
+CONTRACT_ADDRESS=0xYourDeployedContract
+OWNER_ADDRESS=0xOwnerPassedToConstructor
+```
+
+2. Run verify script:
+
+```bash
+npm run verify:sepolia
+```
+
 ## Safety Notes
 
 - Verify all addresses and chain IDs before deployment.
