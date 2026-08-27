@@ -1,2 +1,32 @@
 # Oil
-permission 
+
+Private Solidity workspace for permit-style USDC transfer request flows.
+
+## Included Contracts
+
+- `contracts/PermitRequestUSDC.sol`  
+  Request-record contract only (stores and emits request data).
+- `contracts/ExecutablePermitRequestUSDC.sol`  
+  One-time executable request contract that can call `transferFrom` after allowance is set.
+
+## Quick Start (Hardhat)
+
+```bash
+npm install
+cp .env.example .env
+npx hardhat compile
+npx hardhat test
+```
+
+## Deploy
+
+```bash
+npx hardhat run scripts/deploy.js --network sepolia
+```
+
+## Safety Notes
+
+- Verify all addresses and chain IDs before deployment.
+- USDC uses 6 decimals.
+- `ExecutablePermitRequestUSDC` requires allowance to the deployed contract before execution.
+- This repository is a template and does not implement full EIP-7702 logic.
