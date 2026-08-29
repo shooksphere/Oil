@@ -1,0 +1,59 @@
+name: Deploy (manual)
+
+# Run this workflow by hand from GitHub → Actions → "Deploy (manual)" → Run workflow.
+# Choose the target network and whether to verify on Etherscan.
+# Requires the same three repository secrets as the auto-deploy workflow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      network:
+        description: "Target network"
+        required: true
+        default: "sepolia"
+        type: choice
+        options:
+          - sepolia
+          - hardhat
+      verify:
+        description: "Verify contracts on Etherscan after deploy?"
+        required: false
+        default: "true"
+        type: boolean
+
+jobs:
+  deploy:
+    name: Deploy contracts → ${{ github.event.inputs.network }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Compile contracts
+        run: npx hardhat compile
+
+      - name: Deploy
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        run: npx hardhat run scripts/deploy.js --network ${{ github.event.inputs.network }}
+
+      - name: Verify on Etherscan
+        if: ${{ github.event.inputs.verify == 'true' && github.event.inputs.network != 'hardhat' }}
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+        run: npx hardhat run scripts/verify.js --network ${{ github.event.inputs.network }}
+        continue-on-error: true
