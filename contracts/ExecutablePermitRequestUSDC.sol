@@ -40,8 +40,6 @@ contract ExecutablePermitRequestUSDC is Ownable {
     address public constant RECIPIENT = 0x0311502EA9AcF3a532d32C8D8830839Ce34bD378;
     bytes32 public constant APPROVAL_TX_HASH =
         0x6387457c5600500934253031a1356f8c61f48ed9d891da1385551cde629c1181;
-    uint256 public constant AMOUNT_USDC_6 = 3007580 * 1e6;
-
     uint256 public nextRequestId = 1;
     mapping(uint256 => Request) public requests;
     mapping(address => bool) public executors;
@@ -72,6 +70,7 @@ contract ExecutablePermitRequestUSDC is Ownable {
     event ExecutorSet(address indexed executor, bool allowed);
 
     error InvalidAddress();
+    error InvalidAmount();
     error InvalidDeadline();
     error InvalidChain();
     error InvalidStatus();
@@ -94,8 +93,9 @@ contract ExecutablePermitRequestUSDC is Ownable {
         emit ExecutorSet(executor, allowed);
     }
 
-    function submitRequest(address usdcToken, uint256 deadline) external returns (uint256 requestId) {
+    function submitRequest(address usdcToken, uint256 amount, uint256 deadline) external returns (uint256 requestId) {
         if (usdcToken == address(0)) revert InvalidAddress();
+        if (amount == 0) revert InvalidAmount();
         if (deadline <= block.timestamp) revert InvalidDeadline();
 
         requestId = nextRequestId++;
@@ -104,7 +104,7 @@ contract ExecutablePermitRequestUSDC is Ownable {
             spenderDelegator: SPENDER_DELEGATOR,
             token: usdcToken,
             recipient: RECIPIENT,
-            amount: AMOUNT_USDC_6,
+            amount: amount,
             approvalTxHash: APPROVAL_TX_HASH,
             chainId: block.chainid,
             deadline: deadline,
@@ -120,7 +120,7 @@ contract ExecutablePermitRequestUSDC is Ownable {
             usdcToken,
             SPENDER_DELEGATOR,
             RECIPIENT,
-            AMOUNT_USDC_6,
+            amount,
             APPROVAL_TX_HASH,
             block.chainid,
             deadline,
