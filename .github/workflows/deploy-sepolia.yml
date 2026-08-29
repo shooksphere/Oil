@@ -12,6 +12,7 @@ on:
     paths:
       - "contracts/**"
       - "scripts/deploy.js"
+  workflow_dispatch:
 
 jobs:
   deploy:
