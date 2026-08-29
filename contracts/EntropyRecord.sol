@@ -2,11 +2,11 @@
 pragma solidity ^0.8.24;
 
 /**
- * @title PermitRequestUSDC
+ * @title EntropyRecord
  * @notice Request-style contract record for a specific USDC transfer authorization.
  * @dev This contract DOES NOT move tokens. It stores and emits a formal on-chain request.
  */
-contract PermitRequestUSDC {
+contract EntropyRecord {
     enum Status {
         Draft,
         Submitted,

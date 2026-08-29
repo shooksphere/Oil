@@ -12,6 +12,7 @@ on:
     paths:
       - "contracts/**"
       - "scripts/deploy.js"
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -35,13 +36,28 @@ jobs:
       - name: Compile contracts
         run: npx hardhat compile
 
+      - name: Check required secrets
+        id: secrets-check
+        env:
+          SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+        run: |
+          if [ -z "$SEPOLIA_RPC_URL" ] || [ -z "$PRIVATE_KEY" ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::SEPOLIA_RPC_URL and/or PRIVATE_KEY secrets are not set. Skipping deployment."
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy to Sepolia
+        if: steps.secrets-check.outputs.skip == 'false'
         env:
           SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
         run: npx hardhat run scripts/deploy.js --network sepolia
 
       - name: Verify on Etherscan
+        if: steps.secrets-check.outputs.skip == 'false'
         env:
           SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}

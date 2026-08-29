@@ -1,9 +1,9 @@
 const { expect } = require("chai");
 
-describe("ExecutablePermitRequestUSDC", function () {
+describe("Entropy", function () {
   it("submits a request", async function () {
     const [owner, requester] = await ethers.getSigners();
-    const C = await ethers.getContractFactory("ExecutablePermitRequestUSDC");
+    const C = await ethers.getContractFactory("Entropy");
     const c = await C.deploy(owner.address);
     await c.waitForDeployment();
 

@@ -4,11 +4,11 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying with:", deployer.address);
 
-  const Factory = await ethers.getContractFactory("ExecutablePermitRequestUSDC");
+  const Factory = await ethers.getContractFactory("Entropy");
   const contract = await Factory.deploy(deployer.address);
   await contract.waitForDeployment();
 
-  console.log("ExecutablePermitRequestUSDC deployed at:", await contract.getAddress());
+  console.log("Entropy deployed at:", await contract.getAddress());
 }
 
 main().catch((error) => {
