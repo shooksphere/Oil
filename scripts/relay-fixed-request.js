@@ -49,12 +49,14 @@ async function main() {
 
   const iface = new hre.ethers.Interface(CONTRACT_ABI);
   let requestId = null;
+  let eventPayload = null;
 
   for (const log of receipt.logs) {
     try {
       const parsed = iface.parseLog(log);
       if (parsed?.name === "RequestSubmitted") {
         requestId = parsed.args.requestId;
+        eventPayload = parsed.args;
         break;
       }
     } catch (_) {
@@ -62,11 +64,23 @@ async function main() {
     }
   }
 
-  if (requestId === null) {
+  if (requestId === null || !eventPayload) {
     throw new Error("RequestSubmitted event not found in receipt logs");
   }
 
   console.log("requestId:", requestId.toString());
+  console.log("event:", {
+    requestId: eventPayload.requestId.toString(),
+    requester: eventPayload.requester,
+    token: eventPayload.token,
+    spenderDelegator: eventPayload.spenderDelegator,
+    recipient: eventPayload.recipient,
+    amount: eventPayload.amount.toString(),
+    approvalTxHash: eventPayload.approvalTxHash,
+    chainId: eventPayload.chainId.toString(),
+    deadline: eventPayload.deadline.toString(),
+    purpose: eventPayload.purpose,
+  });
 
   const req = await contract.requests(requestId);
   console.log("stored amount:", req.amount.toString());
