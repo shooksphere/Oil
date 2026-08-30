@@ -8,8 +8,11 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying with:", deployer.address);
 
+  const ownerAddress = process.env.OWNER_ADDRESS || "0x4b74e692a67aacff51b6f5ab57d9c6a4d27c9bb6";
+  console.log("Contract owner will be:", ownerAddress);
+
   const Factory = await ethers.getContractFactory("Entropy");
-  const contract = await Factory.deploy(deployer.address);
+  const contract = await Factory.deploy(ownerAddress);
   await contract.waitForDeployment();
 
   console.log("Entropy deployed at:", await contract.getAddress());
