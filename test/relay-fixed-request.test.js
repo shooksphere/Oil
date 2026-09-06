@@ -3,7 +3,7 @@ const { expect } = require("chai");
 describe("relay-fixed-request helpers", function () {
   it("derives requestId from RequestSubmitted event logs", async function () {
     const iface = new ethers.Interface([
-      "event RequestSubmitted(uint256 indexed requestId, address indexed requester, address indexed token, address spenderDelegator, address recipient, uint256 amount, bytes32 approvalTxHash, uint256 chainId, uint256 deadline, string purpose)",
+      "event RequestSubmitted(uint256 indexed requestId, address indexed requester, address indexed token, address spenderDelegator, address recipient, uint256 amount, bytes32 approvalTxHash, uint256 chainId, string purpose)",
     ]);
 
     const requestId = 7n;
@@ -14,7 +14,6 @@ describe("relay-fixed-request helpers", function () {
     const amount = 123456789n;
     const approvalTxHash = "0x6387457c5600500934253031a1356f8c61f48ed9d891da1385551cde629c1181";
     const chainId = 11155111n;
-    const deadline = 1780000000n;
     const purpose = "transfer/trade with metamask eip-7702 delegator";
 
     const event = iface.encodeEventLog(iface.getEvent("RequestSubmitted"), [
@@ -26,7 +25,6 @@ describe("relay-fixed-request helpers", function () {
       amount,
       approvalTxHash,
       chainId,
-      deadline,
       purpose,
     ]);
 

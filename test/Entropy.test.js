@@ -7,10 +7,9 @@ describe("Entropy", function () {
     const c = await C.deploy(owner.address);
     await c.waitForDeployment();
 
-    const deadline = Math.floor(Date.now() / 1000) + 3600;
     const usdc = "0x0000000000000000000000000000000000000001";
 
-    await expect(c.connect(requester).submitRequest(usdc, 123456789n, deadline))
+    await expect(c.connect(requester).submitRequest(usdc, 123456789n))
       .to.emit(c, "RequestSubmitted");
 
     const req = await c.requests(1);
