@@ -76,6 +76,8 @@ await entropy.connect(requester).cancelRequest(1);
 
 ### EntropyRecord.submitRequest
 
+Use the target execution chain id (for mainnet: `1`, for sepolia: `11155111`).
+
 ```js
 const record = await ethers.getContractAt("EntropyRecord", "0xRecordAddress");
 await record.connect(requester).submitRequest(
