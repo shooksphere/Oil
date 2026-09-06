@@ -3,7 +3,7 @@
 ## 1) Installation
 
 ```bash
-cd /home/runner/work/Oil/Oil
+cd Oil
 npm install
 cp .env.example .env
 ```

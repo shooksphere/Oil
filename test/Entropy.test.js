@@ -16,5 +16,9 @@ describe("Entropy", function () {
     expect(req.requester).to.equal(requester.address);
     expect(req.token).to.equal(usdc);
     expect(req.amount).to.equal(123456789n);
+
+    await ethers.provider.send("evm_increaseTime", [24 * 60 * 60]);
+    await ethers.provider.send("evm_mine");
+    expect(await c.isActive(1)).to.equal(true);
   });
 });
