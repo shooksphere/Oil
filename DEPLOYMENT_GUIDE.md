@@ -32,7 +32,7 @@ npx hardhat console --network sepolia
 
 ```js
 const F = await ethers.getContractFactory("EntropyRecord");
-const r = await F.deploy();
+const r = await F.deploy(); // no constructor args
 await r.waitForDeployment();
 await r.getAddress();
 ```
