@@ -12,6 +12,7 @@ Set at minimum:
 
 ```bash
 SEPOLIA_RPC_URL=...
+MAINNET_RPC_URL=...
 PRIVATE_KEY=...
 OWNER_ADDRESS=0xYourOwnerAddress
 ```
@@ -21,6 +22,7 @@ OWNER_ADDRESS=0xYourOwnerAddress
 ```bash
 npx hardhat compile
 npx hardhat run scripts/deploy.js --network sepolia
+npx hardhat run scripts/deploy.js --network mainnet
 ```
 
 Current deploy script deploys `Entropy`.  
