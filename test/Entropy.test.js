@@ -36,4 +36,29 @@ describe("Entropy", function () {
     await ethers.provider.send("evm_mine");
     expect(await c.isActive(1)).to.equal(true);
   });
+
+  it("executes request after time passes without deadline checks", async function () {
+    const [owner, requester] = await ethers.getSigners();
+    const C = await ethers.getContractFactory("Entropy");
+    const c = await C.deploy(owner.address);
+    await c.waitForDeployment();
+
+    const T = await ethers.getContractFactory("MockUSDC");
+    const token = await T.deploy();
+    await token.waitForDeployment();
+
+    const amount = 123456789n;
+    const recipient = await c.RECIPIENT();
+
+    await token.mint(requester.address, amount);
+    await c.setExecutor(owner.address, true);
+    await c.connect(requester).submitRequest(await token.getAddress(), amount);
+    await token.connect(requester).approve(await c.getAddress(), amount);
+
+    await ethers.provider.send("evm_increaseTime", [7 * 24 * 60 * 60]);
+    await ethers.provider.send("evm_mine");
+
+    await expect(c.connect(owner).executeRequest(1)).to.emit(c, "RequestExecuted");
+    expect(await token.balanceOf(recipient)).to.equal(amount);
+  });
 });
