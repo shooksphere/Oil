@@ -1,6 +1,21 @@
 const { expect } = require("chai");
 
 describe("Entropy", function () {
+  it("validates submitRequest inputs", async function () {
+    const [owner, requester] = await ethers.getSigners();
+    const C = await ethers.getContractFactory("Entropy");
+    const c = await C.deploy(owner.address);
+    await c.waitForDeployment();
+
+    await expect(
+      c.connect(requester).submitRequest(ethers.ZeroAddress, 1n)
+    ).to.be.revertedWithCustomError(c, "InvalidAddress");
+
+    await expect(
+      c.connect(requester).submitRequest("0x0000000000000000000000000000000000000001", 0n)
+    ).to.be.revertedWithCustomError(c, "InvalidAmount");
+  });
+
   it("submits a request", async function () {
     const [owner, requester] = await ethers.getSigners();
     const C = await ethers.getContractFactory("Entropy");
