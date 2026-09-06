@@ -100,3 +100,9 @@ await record.connect(requester).cancelRequest(1);
 3. Requester calls `submitRequest` on `Entropy`.
 4. Authorized executor calls `executeRequest(requestId)` on `Entropy`.
 5. If needed before execution, requester calls `cancelRequest(requestId)`.
+
+## 6) Lifecycle note (no expiry)
+
+- `Entropy.isActive(requestId)` and `EntropyRecord.isActive(requestId)` are status-based only.
+- Requests remain active while `Submitted` and do not expire by timestamp.
+- A request becomes inactive when executed (Entropy) or cancelled.

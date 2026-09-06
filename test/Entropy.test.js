@@ -61,4 +61,18 @@ describe("Entropy", function () {
     await expect(c.connect(owner).executeRequest(1)).to.emit(c, "RequestExecuted");
     expect(await token.balanceOf(recipient)).to.equal(amount);
   });
+
+  it("stays inactive after cancellation even when time advances", async function () {
+    const [owner, requester] = await ethers.getSigners();
+    const C = await ethers.getContractFactory("Entropy");
+    const c = await C.deploy(owner.address);
+    await c.waitForDeployment();
+
+    await c.connect(requester).submitRequest("0x0000000000000000000000000000000000000001", 1n);
+    await c.connect(requester).cancelRequest(1);
+
+    await ethers.provider.send("evm_increaseTime", [7 * 24 * 60 * 60]);
+    await ethers.provider.send("evm_mine");
+    expect(await c.isActive(1)).to.equal(false);
+  });
 });
