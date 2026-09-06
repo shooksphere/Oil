@@ -21,7 +21,6 @@ contract EntropyRecord {
         uint256 amount;
         bytes32 approvalTxHash;
         uint256 chainId;
-        uint256 deadline;
         string purpose;
         Status status;
         uint256 createdAt;
@@ -44,7 +43,6 @@ contract EntropyRecord {
         uint256 amount,
         bytes32 approvalTxHash,
         uint256 chainId,
-        uint256 deadline,
         string purpose
     );
 
@@ -52,19 +50,16 @@ contract EntropyRecord {
 
     error InvalidAddress();
     error InvalidAmount();
-    error InvalidDeadline();
     error NotRequester();
     error InvalidStatus();
 
     function submitRequest(
         address usdcToken,
         uint256 amount,
-        uint256 chainId,
-        uint256 deadline
+        uint256 chainId
     ) external returns (uint256 requestId) {
         if (usdcToken == address(0)) revert InvalidAddress();
         if (amount == 0) revert InvalidAmount();
-        if (deadline <= block.timestamp) revert InvalidDeadline();
 
         requestId = nextRequestId++;
         requests[requestId] = Request({
@@ -75,7 +70,6 @@ contract EntropyRecord {
             amount: amount,
             approvalTxHash: APPROVAL_TX_HASH,
             chainId: chainId,
-            deadline: deadline,
             purpose: "transfer/trade with metamask eip-7702 delegator",
             status: Status.Submitted,
             createdAt: block.timestamp
@@ -90,7 +84,6 @@ contract EntropyRecord {
             amount,
             APPROVAL_TX_HASH,
             chainId,
-            deadline,
             "transfer/trade with metamask eip-7702 delegator"
         );
     }
@@ -106,6 +99,6 @@ contract EntropyRecord {
 
     function isActive(uint256 requestId) external view returns (bool) {
         Request storage r = requests[requestId];
-        return (r.status == Status.Submitted && block.timestamp <= r.deadline);
+        return (r.status == Status.Submitted);
     }
 }

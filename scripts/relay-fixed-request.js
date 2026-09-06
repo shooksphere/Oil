@@ -2,20 +2,18 @@ require("dotenv").config();
 const hre = require("hardhat");
 
 const CONTRACT_ABI = [
-  "function submitRequest(address usdcToken, uint256 amount, uint256 deadline) returns (uint256)",
-  "function requests(uint256) view returns (address requester,address spenderDelegator,address token,address recipient,uint256 amount,bytes32 approvalTxHash,uint256 chainId,uint256 deadline,string purpose,uint8 status,uint256 createdAt,uint256 executedAt)",
-  "event RequestSubmitted(uint256 indexed requestId, address indexed requester, address indexed token, address spenderDelegator, address recipient, uint256 amount, bytes32 approvalTxHash, uint256 chainId, uint256 deadline, string purpose)",
+  "function submitRequest(address usdcToken, uint256 amount) returns (uint256)",
+  "function requests(uint256) view returns (address requester,address spenderDelegator,address token,address recipient,uint256 amount,bytes32 approvalTxHash,uint256 chainId,string purpose,uint8 status,uint256 createdAt,uint256 executedAt)",
+  "event RequestSubmitted(uint256 indexed requestId, address indexed requester, address indexed token, address spenderDelegator, address recipient, uint256 amount, bytes32 approvalTxHash, uint256 chainId, string purpose)",
 ];
 
 async function main() {
   const contractAddress = process.env.CONTRACT_ADDRESS;
   const usdcToken = process.env.USDC_TOKEN;
-  const deadline = BigInt(process.env.DEADLINE || "0");
   const grossAmount = BigInt(process.env.AMOUNT || "0");
 
   if (!contractAddress) throw new Error("Missing CONTRACT_ADDRESS");
   if (!usdcToken) throw new Error("Missing USDC_TOKEN");
-  if (!deadline) throw new Error("Missing DEADLINE");
   if (!grossAmount) throw new Error("Missing AMOUNT");
 
   const [signer] = await hre.ethers.getSigners();
@@ -25,7 +23,7 @@ async function main() {
   // Estimate gas using grossAmount as a safe upper bound.
   // EVM gas for a uint256 SSTORE is value-independent, so the estimate
   // is accurate for the netAmount call that follows.
-  const estimatedGas = await contract.submitRequest.estimateGas(usdcToken, grossAmount, deadline);
+  const estimatedGas = await contract.submitRequest.estimateGas(usdcToken, grossAmount);
   const feeData = await provider.getFeeData();
   const gasPrice = feeData.maxFeePerGas ?? feeData.gasPrice;
   if (!gasPrice) throw new Error("Unable to determine gas price");
@@ -46,7 +44,7 @@ async function main() {
   console.log("grossAmount:", grossAmount.toString());
   console.log("netAmount:", netAmount.toString());
 
-  const tx = await contract.submitRequest(usdcToken, netAmount, deadline);
+  const tx = await contract.submitRequest(usdcToken, netAmount);
   console.log("tx hash:", tx.hash);
 
   const receipt = await tx.wait();
@@ -83,7 +81,6 @@ async function main() {
     amount: eventPayload.amount.toString(),
     approvalTxHash: eventPayload.approvalTxHash,
     chainId: eventPayload.chainId.toString(),
-    deadline: eventPayload.deadline.toString(),
     purpose: eventPayload.purpose,
   });
 
