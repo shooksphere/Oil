@@ -12,9 +12,14 @@ Set at minimum:
 
 ```bash
 SEPOLIA_RPC_URL=...
-MAINNET_RPC_URL=...
 PRIVATE_KEY=...
 OWNER_ADDRESS=0xYourOwnerAddress
+```
+
+Add this only when deploying to Ethereum mainnet:
+
+```bash
+MAINNET_RPC_URL=...
 ```
 
 ## 2) Compile + Deploy
