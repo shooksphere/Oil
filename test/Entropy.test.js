@@ -54,7 +54,7 @@ describe("Entropy", function () {
     expect(req.amount).to.equal(123456789n);
     expect(req.deadline).to.equal(deadline);
 
-    await ethers.provider.send("evm_increaseTime", [24 * 60 * 60]);
+    await ethers.provider.send("evm_increaseTime", [23 * 60 * 60]);
     await ethers.provider.send("evm_mine");
     expect(await c.isActive(1)).to.equal(true);
   });
