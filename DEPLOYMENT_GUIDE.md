@@ -16,6 +16,8 @@ PRIVATE_KEY=...
 OWNER_ADDRESS=0xYourOwnerAddress
 ```
 
+For GitHub Actions deployments, use a dedicated low-balance sponsor/deployer wallet in `PRIVATE_KEY`; CI pays deployment gas from that wallet, not from end users.
+
 Add this only when deploying to Ethereum mainnet:
 
 ```bash
@@ -63,7 +65,8 @@ await entropy.setExecutor("0xExecutorAddress", false); // revoke
 ```js
 await entropy.connect(requester).submitRequest(
   "0xUsdcTokenAddress",
-  3007580000000n
+  3007580000000n,
+  1789135200n // unix seconds UTC (2026-09-11 14:00:00 UTC / 10:00 AM ET)
 );
 ```
 
@@ -106,8 +109,9 @@ await record.connect(requester).cancelRequest(1);
 4. Authorized executor calls `executeRequest(requestId)` on `Entropy`.
 5. If needed before execution, requester calls `cancelRequest(requestId)`.
 
-## 6) Lifecycle note (no expiry)
+## 6) Lifecycle note
 
-- `Entropy.isActive(requestId)` and `EntropyRecord.isActive(requestId)` are status-based only.
-- Requests remain active while `Submitted` and do not expire by timestamp.
-- A request becomes inactive when executed (Entropy) or cancelled.
+- `Entropy.submitRequest` requires a future deadline in unix seconds UTC.
+- `Entropy.executeRequest` is only allowed while `block.timestamp <= deadline`; afterwards it reverts with `DeadlineExpired()`.
+- `Entropy.isActive(requestId)` remains status-based only, so an expired request still reads active until it is cancelled or successfully executed.
+- `EntropyRecord.isActive(requestId)` is also status-based only.

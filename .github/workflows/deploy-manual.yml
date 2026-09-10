@@ -3,6 +3,7 @@ name: Deploy (manual)
 # Run this workflow by hand from GitHub → Actions → "Deploy (manual)" → Run workflow.
 # Choose the target network and whether to verify on Etherscan.
 # Requires the same three repository secrets as the auto-deploy workflow.
+# Gas is paid by the deployer/sponsor wallet from GitHub Actions secrets, not by end users.
 
 on:
   workflow_dispatch:
@@ -27,6 +28,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    concurrency:
+      group: manual-deploy-${{ github.event.inputs.network }}
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
@@ -42,6 +46,9 @@ jobs:
 
       - name: Compile contracts
         run: npx hardhat compile
+
+      - name: Run tests
+        run: npx hardhat test
 
       - name: Deploy
         env:
