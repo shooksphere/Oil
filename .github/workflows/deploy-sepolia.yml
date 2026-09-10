@@ -1,10 +1,11 @@
-name: Deploy to Sepolia (auto)
+name: Sponsored Deploy to Sepolia (auto)
 
-# Automatically deploys both contracts to Sepolia whenever code is pushed to main.
+# Automatically deploys the contract to Sepolia whenever code is pushed to main.
 # Requires these repository secrets to be set (Settings → Secrets → Actions):
 #   SEPOLIA_RPC_URL   – e.g. https://sepolia.infura.io/v3/<key>
-#   PRIVATE_KEY       – deployer wallet private key (no 0x prefix needed by hardhat)
+#   PRIVATE_KEY       – dedicated low-balance deployer/sponsor wallet private key
 #   ETHERSCAN_API_KEY – for automatic source verification
+# Gas is paid by the CI deployer/sponsor wallet, not by end users.
 
 on:
   push:
@@ -12,14 +13,19 @@ on:
     paths:
       - "contracts/**"
       - "scripts/deploy.js"
+      - "scripts/verify.js"
   workflow_dispatch:
 
 jobs:
   deploy:
-    name: Deploy contracts → Sepolia
+    name: Deploy contract → Sepolia
     runs-on: ubuntu-latest
+    environment: sepolia
     permissions:
       contents: read
+    concurrency:
+      group: sponsored-deploy-sepolia
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
@@ -35,6 +41,9 @@ jobs:
 
       - name: Compile contracts
         run: npx hardhat compile
+
+      - name: Run tests
+        run: npx hardhat test
 
       - name: Check required secrets
         id: secrets-check
