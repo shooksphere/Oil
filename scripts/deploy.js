@@ -23,7 +23,7 @@ function resolvePetroSubmitSelectorSetting(env = process.env) {
 
 function resolvePetroSigner(deployer, env = process.env) {
   if (env.PETRO_ADMIN_PRIVATE_KEY) {
-    return new hre.ethers.Wallet(env.PETRO_ADMIN_PRIVATE_KEY, hre.ethers.provider);
+    return new hre.ethers.Wallet(env.PETRO_ADMIN_PRIVATE_KEY, deployer.provider ?? hre.ethers.provider);
   }
   return deployer;
 }

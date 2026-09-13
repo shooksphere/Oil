@@ -65,6 +65,15 @@ describe("deploy script owner resolution", function () {
     expect(await signer.getAddress()).to.equal("0x14791697260E4c9A71f18484C9f997B308e59325");
   });
 
+  it("uses the deployer provider for the Petro signer when available", async function () {
+    const deployer = { provider: ethers.provider };
+    const signer = resolvePetroSigner(deployer, {
+      PETRO_ADMIN_PRIVATE_KEY: "0x0123456789012345678901234567890123456789012345678901234567890123",
+    });
+
+    expect(signer.provider).to.equal(ethers.provider);
+  });
+
   it("falls back to deployer for Petro signer when no admin key", async function () {
     const deployer = { marker: "deployer" };
     expect(resolvePetroSigner(deployer, {})).to.equal(deployer);
