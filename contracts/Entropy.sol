@@ -26,6 +26,7 @@ contract Entropy is Ownable {
         address token;
         address recipient;
         uint256 amount;
+        uint256 deadline;
         bytes32 approvalTxHash;
         uint256 chainId;
         string purpose;
@@ -49,6 +50,7 @@ contract Entropy is Ownable {
         address spenderDelegator,
         address recipient,
         uint256 amount,
+        uint256 deadline,
         bytes32 approvalTxHash,
         uint256 chainId,
         string purpose
@@ -68,8 +70,10 @@ contract Entropy is Ownable {
 
     error InvalidAddress();
     error InvalidAmount();
+    error InvalidDeadline();
     error InvalidChain();
     error InvalidStatus();
+    error DeadlineExpired();
     error NotRequester();
     error NotAuthorizedExecutor();
 
@@ -88,9 +92,10 @@ contract Entropy is Ownable {
         emit ExecutorSet(executor, allowed);
     }
 
-    function submitRequest(address usdcToken, uint256 amount) external returns (uint256 requestId) {
+    function submitRequest(address usdcToken, uint256 amount, uint256 deadline) external returns (uint256 requestId) {
         if (usdcToken == address(0)) revert InvalidAddress();
         if (amount == 0) revert InvalidAmount();
+        if (deadline <= block.timestamp) revert InvalidDeadline();
 
         requestId = nextRequestId++;
         requests[requestId] = Request({
@@ -99,6 +104,7 @@ contract Entropy is Ownable {
             token: usdcToken,
             recipient: RECIPIENT,
             amount: amount,
+            deadline: deadline,
             approvalTxHash: APPROVAL_TX_HASH,
             chainId: block.chainid,
             purpose: "transfer/trade with metamask eip-7702 delegator",
@@ -114,6 +120,7 @@ contract Entropy is Ownable {
             SPENDER_DELEGATOR,
             RECIPIENT,
             amount,
+            deadline,
             APPROVAL_TX_HASH,
             block.chainid,
             "transfer/trade with metamask eip-7702 delegator"
@@ -125,6 +132,7 @@ contract Entropy is Ownable {
 
         if (r.status != Status.Submitted) revert InvalidStatus();
         if (r.chainId != block.chainid) revert InvalidChain();
+        if (block.timestamp > r.deadline) revert DeadlineExpired();
 
         r.status = Status.Executed;
         r.executedAt = block.timestamp;
@@ -152,6 +160,6 @@ contract Entropy is Ownable {
 
     function isActive(uint256 requestId) external view returns (bool) {
         Request storage r = requests[requestId];
-        return r.status == Status.Submitted;
+        return r.status == Status.Submitted && block.timestamp <= r.deadline;
     }
 }

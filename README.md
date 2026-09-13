@@ -26,7 +26,7 @@ function submitRequest(
 function submitRequest(
     address usdcToken,
     uint256 amount,   // token amount in 6-decimal USDC units (must be > 0)
-    uint256 deadline
+    uint256 deadline  // future unix-seconds UTC timestamp
 ) external returns (uint256 requestId)
 ```
 
@@ -92,6 +92,8 @@ The script:
 4. Parses the `RequestSubmitted` event from the receipt to derive `requestId`
 5. Logs the full event payload and stored request
 
+For tomorrow at 11:00 AM Eastern on 2026-09-14, use `DEADLINE=1789398000`.
+
 ## Verify on Etherscan (Sepolia)
 
 1. Set env vars in `.env`:
@@ -114,4 +116,3 @@ npm run verify:sepolia
 - USDC uses 6 decimals.
 - `ExecutablePermitRequestUSDC` requires allowance to the deployed contract before execution.
 - This repository is a template and does not implement full EIP-7702 logic.
-

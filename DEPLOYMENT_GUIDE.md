@@ -63,7 +63,8 @@ await entropy.setExecutor("0xExecutorAddress", false); // revoke
 ```js
 await entropy.connect(requester).submitRequest(
   "0xUsdcTokenAddress",
-  3007580000000n
+  3007580000000n,
+  1789398000n // 2026-09-14 11:00:00 ET
 );
 ```
 
@@ -106,8 +107,9 @@ await record.connect(requester).cancelRequest(1);
 4. Authorized executor calls `executeRequest(requestId)` on `Entropy`.
 5. If needed before execution, requester calls `cancelRequest(requestId)`.
 
-## 6) Lifecycle note (no expiry)
+## 6) Lifecycle note
 
-- `Entropy.isActive(requestId)` and `EntropyRecord.isActive(requestId)` are status-based only.
-- Requests remain active while `Submitted` and do not expire by timestamp.
-- A request becomes inactive when executed (Entropy) or cancelled.
+- `Entropy` requests now require a future unix-seconds UTC deadline.
+- `Entropy.isActive(requestId)` is true only while the request is `Submitted` and before expiry.
+- `Entropy.executeRequest(requestId)` reverts with `DeadlineExpired` after the deadline.
+- `EntropyRecord.isActive(requestId)` remains status-based only.
