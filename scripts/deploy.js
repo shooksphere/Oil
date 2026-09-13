@@ -57,7 +57,6 @@ async function main() {
     );
 
     const { enableSelectorAllowlist, allowSubmitSelector } = resolvePetroSelectorConfig();
-    const submitSelector = contract.interface.getFunction("submitRequest").selector;
     console.log("Petro admin signer:", await petroSigner.getAddress());
 
     const txAllowTarget = await petro.setTargetAllowed(entropyAddress, true);
@@ -69,6 +68,7 @@ async function main() {
     console.log("Petro selector allowlist enabled:", enableSelectorAllowlist);
 
     if (enableSelectorAllowlist) {
+      const submitSelector = contract.interface.getFunction("submitRequest").selector;
       const txAllowSelector = await petro.setSelectorAllowed(entropyAddress, submitSelector, allowSubmitSelector);
       await txAllowSelector.wait();
       console.log("Petro submit selector configured:", submitSelector, allowSubmitSelector);

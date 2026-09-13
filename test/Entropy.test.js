@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const { ethers } = require("hardhat");
 
 describe("Entropy", function () {
   async function futureDeadline(offset = 3600n) {
