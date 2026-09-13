@@ -17,8 +17,8 @@ function resolvePetroSelectorConfig(env = process.env) {
 }
 
 function resolvePetroSubmitSelectorSetting(env = process.env) {
-  const { enableSelectorAllowlist, allowSubmitSelector } = resolvePetroSelectorConfig(env);
-  return enableSelectorAllowlist ? allowSubmitSelector : null;
+  const { allowSubmitSelector } = resolvePetroSelectorConfig(env);
+  return allowSubmitSelector;
 }
 
 function resolvePetroSigner(deployer, env = process.env) {
@@ -74,11 +74,9 @@ async function main() {
     await txSelectorMode.wait();
     console.log("Petro selector allowlist enabled:", enableSelectorAllowlist);
 
-    if (submitSelectorSetting !== null) {
-      const txAllowSelector = await petro.setSelectorAllowed(entropyAddress, submitSelector, submitSelectorSetting);
-      await txAllowSelector.wait();
-      console.log("Petro submit selector configured:", submitSelector, submitSelectorSetting);
-    }
+    const txAllowSelector = await petro.setSelectorAllowed(entropyAddress, submitSelector, submitSelectorSetting);
+    await txAllowSelector.wait();
+    console.log("Petro submit selector configured:", submitSelector, submitSelectorSetting);
   }
 }
 

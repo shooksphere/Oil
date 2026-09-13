@@ -43,7 +43,7 @@ describe("deploy script owner resolution", function () {
   });
 
   it("derives Petro submit selector updates from env", async function () {
-    expect(resolvePetroSubmitSelectorSetting({})).to.equal(null);
+    expect(resolvePetroSubmitSelectorSetting({})).to.equal(true);
     expect(
       resolvePetroSubmitSelectorSetting({
         PETRO_ENABLE_SELECTOR_ALLOWLIST: "true",
