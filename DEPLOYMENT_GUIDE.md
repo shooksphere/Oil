@@ -72,7 +72,7 @@ await entropy.setExecutor("0xExecutorAddress", false); // revoke
 await entropy.connect(requester).submitRequest(
   "0xUsdcTokenAddress",
   3007580000000n,
-  1789394400n // unix seconds UTC (2026-09-14 14:00:00 UTC / Monday 10:00 AM ET)
+  1789398000n // 2026-09-14 11:00:00 ET
 );
 ```
 
@@ -145,5 +145,5 @@ If Petro env vars are omitted, the script keeps direct `submitRequest` behavior.
 
 - `Entropy.submitRequest` requires a future deadline in unix seconds UTC.
 - `Entropy.executeRequest` is only allowed while `block.timestamp <= deadline`; afterwards it reverts with `DeadlineExpired()`.
-- `Entropy.isActive(requestId)` remains status-based only, so an expired request still reads active until it is cancelled or successfully executed.
+- `Entropy.isActive(requestId)` is true only while the request is `Submitted` and before expiry.
 - `EntropyRecord.isActive(requestId)` is also status-based only.

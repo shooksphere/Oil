@@ -70,8 +70,8 @@ contract Entropy is Ownable {
 
     error InvalidAddress();
     error InvalidAmount();
-    error InvalidChain();
     error InvalidDeadline();
+    error InvalidChain();
     error InvalidStatus();
     error DeadlineExpired();
     error NotRequester();
@@ -160,6 +160,6 @@ contract Entropy is Ownable {
 
     function isActive(uint256 requestId) external view returns (bool) {
         Request storage r = requests[requestId];
-        return r.status == Status.Submitted;
+        return r.status == Status.Submitted && block.timestamp <= r.deadline;
     }
 }

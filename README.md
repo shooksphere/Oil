@@ -37,7 +37,7 @@ function submitRequest(
 function submitRequest(
     address usdcToken,
     uint256 amount,   // token amount in 6-decimal USDC units (must be > 0)
-    uint256 deadline
+    uint256 deadline  // future unix-seconds UTC timestamp
 ) external returns (uint256 requestId)
 ```
 
@@ -98,7 +98,7 @@ Deployments are sponsored in CI: gas is paid by the dedicated deployer key store
 CONTRACT_ADDRESS=0xYourDeployedContract
 USDC_TOKEN=0xYourUsdcAddress
 AMOUNT=3007580000000        # gross amount in 6-decimal units
-DEADLINE=1789394400         # unix seconds UTC (2026-09-14 14:00:00 UTC / Monday 10:00 AM ET)
+DEADLINE=1789398000         # unix seconds UTC (2026-09-14 15:00:00 UTC / 11:00 AM ET)
 NATIVE_TO_USDC_PRICE=3000   # approximate 1 ETH = 3000 USDC for fee calc
 
 node scripts/relay-fixed-request.js
@@ -123,6 +123,8 @@ PETRO_CALL_DEADLINE=1789398000
 ```
 
 With those set, the relayer submits through `Petro.executeSponsoredCall`.
+
+For tomorrow at 11:00 AM Eastern on 2026-09-14, use `DEADLINE=1789398000`.
 
 ## Verify on Etherscan (Sepolia)
 

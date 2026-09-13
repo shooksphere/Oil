@@ -1,6 +1,11 @@
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { buildPetroTypedData, parseOptionalUint, isPetroModeEnabled } = require("../scripts/relay-fixed-request");
+const {
+  assertFutureDeadline,
+  buildPetroTypedData,
+  parseOptionalUint,
+  isPetroModeEnabled,
+} = require("../scripts/relay-fixed-request");
 
 describe("relay-fixed-request helpers", function () {
   it("derives requestId from RequestSubmitted event logs", async function () {
@@ -14,7 +19,7 @@ describe("relay-fixed-request helpers", function () {
     const spenderDelegator = "0x0000000000000000000000000000000000000002";
     const recipient = "0x0000000000000000000000000000000000000003";
     const amount = 123456789n;
-    const deadline = 1789394400n;
+    const deadline = 1789398000n;
     const approvalTxHash = "0x6387457c5600500934253031a1356f8c61f48ed9d891da1385551cde629c1181";
     const chainId = 11155111n;
     const purpose = "transfer/trade with metamask eip-7702 delegator";
@@ -52,7 +57,7 @@ describe("relay-fixed-request helpers", function () {
       data,
       maxCost: 1000000000000000n,
       nonce: 3n,
-      deadline: 1789394400n,
+      deadline: 1789398000n,
     };
 
     const typedData = buildPetroTypedData(1n, "0x0000000000000000000000000000000000000007", request);
@@ -71,6 +76,13 @@ describe("relay-fixed-request helpers", function () {
     );
     expect(() => parseOptionalUint("0x10", "PETRO_MAX_COST")).to.throw(
       "PETRO_MAX_COST must be a positive integer in base-10 string form"
+    );
+  });
+
+  it("validates deadline timestamps against the latest block", async function () {
+    expect(() => assertFutureDeadline("PETRO_CALL_DEADLINE", 11n, 10n)).to.not.throw();
+    expect(() => assertFutureDeadline("PETRO_CALL_DEADLINE", 10n, 10n)).to.throw(
+      "PETRO_CALL_DEADLINE must be greater than latest block timestamp (10)"
     );
   });
 

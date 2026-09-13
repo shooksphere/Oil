@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const { ethers } = require("hardhat");
 
 describe("Entropy", function () {
   async function futureDeadline(offset = 3600n) {
@@ -20,6 +21,10 @@ describe("Entropy", function () {
     await expect(
       c.connect(requester).submitRequest("0x0000000000000000000000000000000000000001", 0n, deadline)
     ).to.be.revertedWithCustomError(c, "InvalidAmount");
+
+    await expect(
+      c.connect(requester).submitRequest("0x0000000000000000000000000000000000000001", 1n, 0n)
+    ).to.be.revertedWithCustomError(c, "InvalidDeadline");
   });
 
   it("reverts when deadline is not in the future", async function () {
@@ -104,7 +109,7 @@ describe("Entropy", function () {
     await ethers.provider.send("evm_mine");
 
     await expect(c.connect(owner).executeRequest(1)).to.be.revertedWithCustomError(c, "DeadlineExpired");
-    expect(await c.isActive(1)).to.equal(true);
+    expect(await c.isActive(1)).to.equal(false);
   });
 
   it("stays inactive after cancellation even when time advances", async function () {
@@ -117,7 +122,7 @@ describe("Entropy", function () {
     await c.connect(requester).submitRequest("0x0000000000000000000000000000000000000001", 1n, deadline);
     await c.connect(requester).cancelRequest(1);
 
-    await ethers.provider.send("evm_increaseTime", [7 * 24 * 60 * 60]);
+    await ethers.provider.send("evm_increaseTime", [24 * 60 * 60]);
     await ethers.provider.send("evm_mine");
     expect(await c.isActive(1)).to.equal(false);
   });

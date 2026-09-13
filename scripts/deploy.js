@@ -18,7 +18,7 @@ function resolvePetroSelectorConfig(env = process.env) {
 
 function resolvePetroSigner(deployer, env = process.env) {
   if (env.PETRO_ADMIN_PRIVATE_KEY) {
-    return new hre.ethers.Wallet(env.PETRO_ADMIN_PRIVATE_KEY, hre.ethers.provider);
+    return new hre.ethers.Wallet(env.PETRO_ADMIN_PRIVATE_KEY, deployer.provider ?? hre.ethers.provider);
   }
   return deployer;
 }
@@ -57,7 +57,6 @@ async function main() {
     );
 
     const { enableSelectorAllowlist, allowSubmitSelector } = resolvePetroSelectorConfig();
-    const submitSelector = contract.interface.getFunction("submitRequest").selector;
     console.log("Petro admin signer:", await petroSigner.getAddress());
 
     const txAllowTarget = await petro.setTargetAllowed(entropyAddress, true);
@@ -68,10 +67,11 @@ async function main() {
     await txSelectorMode.wait();
     console.log("Petro selector allowlist enabled:", enableSelectorAllowlist);
 
-    if (enableSelectorAllowlist && allowSubmitSelector) {
-      const txAllowSelector = await petro.setSelectorAllowed(entropyAddress, submitSelector, true);
+    if (enableSelectorAllowlist) {
+      const submitSelector = contract.interface.getFunction("submitRequest").selector;
+      const txAllowSelector = await petro.setSelectorAllowed(entropyAddress, submitSelector, allowSubmitSelector);
       await txAllowSelector.wait();
-      console.log("Petro selector allowlisted:", submitSelector);
+      console.log("Petro submit selector configured:", submitSelector, allowSubmitSelector);
     }
   }
 }

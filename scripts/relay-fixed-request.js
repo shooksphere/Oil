@@ -59,6 +59,16 @@ function parseOptionalUint(raw, name) {
   }
 }
 
+function toUtcIsoString(unixSeconds) {
+  return new Date(Number(unixSeconds) * 1000).toISOString();
+}
+
+function assertFutureDeadline(name, deadline, latestTimestamp) {
+  if (deadline <= latestTimestamp) {
+    throw new Error(`${name} must be greater than latest block timestamp (${latestTimestamp})`);
+  }
+}
+
 function buildPetroTypedData(chainId, petroAddress, request) {
   return {
     domain: {
@@ -101,9 +111,7 @@ async function main() {
   const network = await provider.getNetwork();
 
   if (!latestBlock) throw new Error("Unable to determine latest block");
-  if (deadline <= BigInt(latestBlock.timestamp)) {
-    throw new Error(`DEADLINE must be greater than latest block timestamp (${latestBlock.timestamp})`);
-  }
+  assertFutureDeadline("DEADLINE", deadline, BigInt(latestBlock.timestamp));
 
   // Estimate gas using grossAmount as a safe upper bound.
   // EVM gas for a uint256 SSTORE is value-independent, so the estimate
@@ -128,7 +136,8 @@ async function main() {
   console.log("gasCostUsdc:", gasCostUsdc.toString());
   console.log("grossAmount:", grossAmount.toString());
   console.log("netAmount:", netAmount.toString());
-  console.log("deadline:", deadline.toString(), "(unix seconds UTC)");
+  console.log("deadline:", deadline.toString());
+  console.log("deadlineUtc:", toUtcIsoString(deadline));
 
   const petroAddress = process.env.PETRO_CONTRACT_ADDRESS;
   const petroMaxCost = parseOptionalUintEnv("PETRO_MAX_COST");
@@ -141,9 +150,6 @@ async function main() {
     }
     if (!petroMaxCost) throw new Error("Missing PETRO_MAX_COST");
     if (!petroCallDeadline) throw new Error("Missing PETRO_CALL_DEADLINE");
-    if (petroCallDeadline <= BigInt(latestBlock.timestamp)) {
-      throw new Error(`PETRO_CALL_DEADLINE must be greater than latest block timestamp (${latestBlock.timestamp})`);
-    }
 
     const sponsorWallet = new hre.ethers.Wallet(process.env.PETRO_SPONSOR_PRIVATE_KEY, provider);
     const executorWallet = process.env.PETRO_EXECUTOR_PRIVATE_KEY
@@ -168,16 +174,20 @@ async function main() {
 
     const typedData = buildPetroTypedData(network.chainId, petroAddress, request);
     const signature = await sponsorWallet.signTypedData(typedData.domain, typedData.types, typedData.value);
+    const petroSubmissionBlock = await provider.getBlock("latest");
+
+    if (!petroSubmissionBlock) throw new Error("Unable to determine latest block");
+    assertFutureDeadline("PETRO_CALL_DEADLINE", petroCallDeadline, BigInt(petroSubmissionBlock.timestamp));
 
     tx = await petro.executeSponsoredCall(request, signature);
     console.log("using Petro sponsor:", sponsor);
     console.log("using Petro executor:", await executorWallet.getAddress());
     console.log("Petro maxCost:", petroMaxCost.toString());
     console.log("Petro call deadline:", petroCallDeadline.toString(), "(unix seconds UTC)");
+    console.log("Petro call deadlineUtc:", toUtcIsoString(petroCallDeadline));
   } else {
     tx = await contract.submitRequest(usdcToken, netAmount, deadline);
   }
-
   console.log("tx hash:", tx.hash);
 
   const receipt = await tx.wait();
@@ -231,6 +241,7 @@ if (require.main === module) {
 }
 
 module.exports = {
+  assertFutureDeadline,
   buildPetroTypedData,
   parseOptionalUint,
   isPetroModeEnabled,
