@@ -3,6 +3,7 @@ name: Deploy (manual)
 # Run this workflow by hand from GitHub → Actions → "Deploy (manual)" → Run workflow.
 # Choose the target network and whether to verify on Etherscan.
 # Requires the same three repository secrets as the auto-deploy workflow.
+# Gas is paid by the deployer/sponsor wallet from GitHub Actions secrets, not by end users.
 
 on:
   workflow_dispatch:
@@ -14,6 +15,7 @@ on:
         type: choice
         options:
           - sepolia
+          - mainnet
           - hardhat
       verify:
         description: "Verify contracts on Etherscan after deploy?"
@@ -27,6 +29,9 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    concurrency:
+      group: manual-deploy-${{ github.event.inputs.network }}
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@v4
@@ -43,17 +48,28 @@ jobs:
       - name: Compile contracts
         run: npx hardhat compile
 
+      - name: Run tests
+        run: npx hardhat test
+
       - name: Deploy
         env:
           SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          OWNER_ADDRESS: ${{ secrets.OWNER_ADDRESS }}
+          PETRO_CONTRACT_ADDRESS: ${{ secrets.PETRO_CONTRACT_ADDRESS }}
+          PETRO_ADMIN_PRIVATE_KEY: ${{ secrets.PETRO_ADMIN_PRIVATE_KEY }}
+          PETRO_ENABLE_SELECTOR_ALLOWLIST: ${{ vars.PETRO_ENABLE_SELECTOR_ALLOWLIST }}
+          PETRO_ALLOW_SUBMIT_SELECTOR: ${{ vars.PETRO_ALLOW_SUBMIT_SELECTOR }}
         run: npx hardhat run scripts/deploy.js --network ${{ github.event.inputs.network }}
 
       - name: Verify on Etherscan
         if: ${{ github.event.inputs.verify == 'true' && github.event.inputs.network != 'hardhat' }}
         env:
           SEPOLIA_RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
+          OWNER_ADDRESS: ${{ secrets.OWNER_ADDRESS }}
         run: npx hardhat run scripts/verify.js --network ${{ github.event.inputs.network }}
         continue-on-error: true

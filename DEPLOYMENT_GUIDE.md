@@ -13,13 +13,21 @@ Set at minimum:
 ```bash
 SEPOLIA_RPC_URL=...
 PRIVATE_KEY=...
-OWNER_ADDRESS=0xYourOwnerAddress
+OWNER_ADDRESS=0x4F2D58cA77f6efb7154B181ca1da05E923E31fFA
 ```
+
+For GitHub Actions deployments, use a dedicated low-balance sponsor/deployer wallet in `PRIVATE_KEY`; CI pays deployment gas from that wallet, not from end users.
 
 Add this only when deploying to Ethereum mainnet:
 
 ```bash
 MAINNET_RPC_URL=...
+```
+
+If `OWNER_ADDRESS` is omitted on `mainnet`, `scripts/deploy.js` defaults to:
+
+```bash
+0x4F2D58cA77f6efb7154B181ca1da05E923E31fFA
 ```
 
 ## 2) Compile + Deploy
@@ -107,9 +115,35 @@ await record.connect(requester).cancelRequest(1);
 4. Authorized executor calls `executeRequest(requestId)` on `Entropy`.
 5. If needed before execution, requester calls `cancelRequest(requestId)`.
 
-## 6) Lifecycle note
+## 6) Petro sponsor wiring (optional)
 
-- `Entropy` requests now require a future unix-seconds UTC deadline.
+When `PETRO_CONTRACT_ADDRESS` is set, `scripts/deploy.js` also configures Petro to allow sponsored calls into the newly deployed `Entropy` contract:
+
+```bash
+PETRO_CONTRACT_ADDRESS=0xPetroAddress
+PETRO_ADMIN_PRIVATE_KEY=0x...               # optional; defaults to deployer key
+PETRO_ENABLE_SELECTOR_ALLOWLIST=true
+PETRO_ALLOW_SUBMIT_SELECTOR=true
+```
+
+With selector mode enabled, deploy configures `submitRequest(address,uint256,uint256)` on the new target.
+
+For sponsored relaying via `scripts/relay-fixed-request.js`, set:
+
+```bash
+PETRO_CONTRACT_ADDRESS=0xPetroAddress
+PETRO_SPONSOR_PRIVATE_KEY=0x...
+PETRO_EXECUTOR_PRIVATE_KEY=0x...           # optional; defaults to relayer signer from PRIVATE_KEY
+PETRO_USER=0xUserAddress                   # optional, defaults to relayer signer
+PETRO_MAX_COST=1000000000000000            # wei cap for Petro SponsoredCall
+PETRO_CALL_DEADLINE=1789398000             # unix seconds UTC, must be in the future
+```
+
+If Petro env vars are omitted, the script keeps direct `submitRequest` behavior.
+
+## 7) Lifecycle note
+
+- `Entropy.submitRequest` requires a future deadline in unix seconds UTC.
+- `Entropy.executeRequest` is only allowed while `block.timestamp <= deadline`; afterwards it reverts with `DeadlineExpired()`.
 - `Entropy.isActive(requestId)` is true only while the request is `Submitted` and before expiry.
-- `Entropy.executeRequest(requestId)` reverts with `DeadlineExpired` after the deadline.
-- `EntropyRecord.isActive(requestId)` remains status-based only.
+- `EntropyRecord.isActive(requestId)` is also status-based only.
