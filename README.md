@@ -75,15 +75,19 @@ Set these under **Settings → Secrets and variables → Actions**:
 | Secret | Description |
 |---|---|
 | `SEPOLIA_RPC_URL` | RPC endpoint, e.g. `https://sepolia.infura.io/v3/<key>` |
+| `MAINNET_RPC_URL` | Ethereum mainnet RPC endpoint for manual mainnet deploys |
 | `PRIVATE_KEY` | Dedicated low-balance deployer/sponsor wallet private key used by CI to pay deployment gas |
 | `ETHERSCAN_API_KEY` | For automatic source verification |
+| `OWNER_ADDRESS` | Optional constructor owner override (mainnet defaults to `0x4F2D58cA77f6efb7154B181ca1da05E923E31fFA`) |
+| `PETRO_CONTRACT_ADDRESS` | Optional Petro contract used to allowlist the deployed Entropy target |
+| `PETRO_ADMIN_PRIVATE_KEY` | Optional Petro owner/admin key for allowlist configuration (falls back to `PRIVATE_KEY`) |
 
 Deployments are sponsored in CI: gas is paid by the dedicated deployer key stored in GitHub Actions secrets, not by end users.
 
 ### How to trigger a manual deploy
 
 1. Go to **Actions → Deploy (manual) → Run workflow**
-2. Pick the target network (`sepolia` or `hardhat`)
+2. Pick the target network (`sepolia`, `mainnet`, or `hardhat`)
 3. Choose whether to verify on Etherscan
 4. Click **Run workflow**
 
@@ -94,7 +98,7 @@ Deployments are sponsored in CI: gas is paid by the dedicated deployer key store
 CONTRACT_ADDRESS=0xYourDeployedContract
 USDC_TOKEN=0xYourUsdcAddress
 AMOUNT=3007580000000        # gross amount in 6-decimal units
-DEADLINE=1789135200         # unix seconds UTC (2026-09-11 14:00:00 UTC / 10:00 AM ET)
+DEADLINE=1789394400         # unix seconds UTC (2026-09-14 14:00:00 UTC / Monday 10:00 AM ET)
 NATIVE_TO_USDC_PRICE=3000   # approximate 1 ETH = 3000 USDC for fee calc
 
 node scripts/relay-fixed-request.js
@@ -107,6 +111,18 @@ The script:
 4. Calls `submitRequest(usdcToken, netAmount, deadline)`
 5. Parses the `RequestSubmitted` event from the receipt to derive `requestId`
 6. Logs the full event payload and stored request
+
+Optional Petro sponsorship mode in the same script:
+
+```bash
+PETRO_CONTRACT_ADDRESS=0xPetroAddress
+PETRO_SPONSOR_PRIVATE_KEY=0x...
+PETRO_EXECUTOR_PRIVATE_KEY=0x...   # optional; defaults to relayer signer
+PETRO_MAX_COST=1000000000000000
+PETRO_CALL_DEADLINE=1789398000
+```
+
+With those set, the relayer submits through `Petro.executeSponsoredCall`.
 
 ## Verify on Etherscan (Sepolia)
 
