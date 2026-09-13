@@ -9,6 +9,20 @@ function resolveOwnerAddress(networkName = "unknown", env = process.env) {
   return networkName === "mainnet" ? DEFAULT_MAINNET_OWNER : DEFAULT_OWNER;
 }
 
+function resolvePetroSelectorConfig(env = process.env) {
+  return {
+    enableSelectorAllowlist: env.PETRO_ENABLE_SELECTOR_ALLOWLIST === "true",
+    allowSubmitSelector: env.PETRO_ALLOW_SUBMIT_SELECTOR !== "false",
+  };
+}
+
+function resolvePetroSigner(deployer, env = process.env) {
+  if (env.PETRO_ADMIN_PRIVATE_KEY) {
+    return new hre.ethers.Wallet(env.PETRO_ADMIN_PRIVATE_KEY, hre.ethers.provider);
+  }
+  return deployer;
+}
+
 async function main() {
   if (!process.env.PRIVATE_KEY) {
     throw new Error("PRIVATE_KEY environment variable is not set");
@@ -31,18 +45,20 @@ async function main() {
 
   const petroAddress = process.env.PETRO_CONTRACT_ADDRESS;
   if (petroAddress) {
-    const petro = await ethers.getContractAt(
+    const petroSigner = resolvePetroSigner(deployer);
+    const petro = await hre.ethers.getContractAt(
       [
         "function setTargetAllowed(address target, bool allowed) external",
         "function setSelectorAllowlistEnabled(address target, bool enabled) external",
         "function setSelectorAllowed(address target, bytes4 selector, bool allowed) external",
       ],
-      petroAddress
+      petroAddress,
+      petroSigner
     );
 
-    const enableSelectorAllowlist = process.env.PETRO_ENABLE_SELECTOR_ALLOWLIST === "true";
-    const allowSubmitSelector = process.env.PETRO_ALLOW_SUBMIT_SELECTOR !== "false";
+    const { enableSelectorAllowlist, allowSubmitSelector } = resolvePetroSelectorConfig();
     const submitSelector = contract.interface.getFunction("submitRequest").selector;
+    console.log("Petro admin signer:", await petroSigner.getAddress());
 
     const txAllowTarget = await petro.setTargetAllowed(entropyAddress, true);
     await txAllowTarget.wait();
@@ -69,5 +85,8 @@ if (require.main === module) {
 
 module.exports = {
   resolveOwnerAddress,
+  resolvePetroSelectorConfig,
+  resolvePetroSigner,
   DEFAULT_MAINNET_OWNER,
+  DEFAULT_OWNER,
 };

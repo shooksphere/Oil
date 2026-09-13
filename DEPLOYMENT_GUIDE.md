@@ -121,6 +121,7 @@ When `PETRO_CONTRACT_ADDRESS` is set, `scripts/deploy.js` also configures Petro 
 
 ```bash
 PETRO_CONTRACT_ADDRESS=0xPetroAddress
+PETRO_ADMIN_PRIVATE_KEY=0x...               # optional; defaults to deployer key
 PETRO_ENABLE_SELECTOR_ALLOWLIST=true
 PETRO_ALLOW_SUBMIT_SELECTOR=true
 ```
@@ -132,6 +133,7 @@ For sponsored relaying via `scripts/relay-fixed-request.js`, set:
 ```bash
 PETRO_CONTRACT_ADDRESS=0xPetroAddress
 PETRO_SPONSOR_PRIVATE_KEY=0x...
+PETRO_EXECUTOR_PRIVATE_KEY=0x...           # optional; defaults to relayer signer from PRIVATE_KEY
 PETRO_USER=0xUserAddress                   # optional, defaults to relayer signer
 PETRO_MAX_COST=1000000000000000            # wei cap for Petro SponsoredCall
 PETRO_CALL_DEADLINE=1789398000             # unix seconds UTC, must be in the future

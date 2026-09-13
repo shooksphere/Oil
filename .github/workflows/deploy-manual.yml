@@ -58,6 +58,7 @@ jobs:
           PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
           OWNER_ADDRESS: ${{ secrets.OWNER_ADDRESS }}
           PETRO_CONTRACT_ADDRESS: ${{ secrets.PETRO_CONTRACT_ADDRESS }}
+          PETRO_ADMIN_PRIVATE_KEY: ${{ secrets.PETRO_ADMIN_PRIVATE_KEY }}
           PETRO_ENABLE_SELECTOR_ALLOWLIST: ${{ vars.PETRO_ENABLE_SELECTOR_ALLOWLIST }}
           PETRO_ALLOW_SUBMIT_SELECTOR: ${{ vars.PETRO_ALLOW_SUBMIT_SELECTOR }}
         run: npx hardhat run scripts/deploy.js --network ${{ github.event.inputs.network }}

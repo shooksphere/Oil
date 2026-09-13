@@ -1,5 +1,6 @@
 const { expect } = require("chai");
-const { buildPetroTypedData } = require("../scripts/relay-fixed-request");
+const { ethers } = require("hardhat");
+const { buildPetroTypedData, parseOptionalUint, isPetroModeEnabled } = require("../scripts/relay-fixed-request");
 
 describe("relay-fixed-request helpers", function () {
   it("derives requestId from RequestSubmitted event logs", async function () {
@@ -60,5 +61,21 @@ describe("relay-fixed-request helpers", function () {
     expect(typedData.domain.version).to.equal("1");
     expect(typedData.value.dataHash).to.equal(ethers.keccak256(data));
     expect(typedData.value.deadline).to.equal(request.deadline);
+  });
+
+  it("parses optional positive integer env values", async function () {
+    expect(parseOptionalUint(undefined, "PETRO_MAX_COST")).to.equal(null);
+    expect(parseOptionalUint("42", "PETRO_MAX_COST")).to.equal(42n);
+    expect(() => parseOptionalUint("0", "PETRO_MAX_COST")).to.throw(
+      "PETRO_MAX_COST must be a positive integer in base-10 string form"
+    );
+    expect(() => parseOptionalUint("0x10", "PETRO_MAX_COST")).to.throw(
+      "PETRO_MAX_COST must be a positive integer in base-10 string form"
+    );
+  });
+
+  it("switches to Petro mode only when PETRO_CONTRACT_ADDRESS is set", async function () {
+    expect(isPetroModeEnabled({})).to.equal(false);
+    expect(isPetroModeEnabled({ PETRO_CONTRACT_ADDRESS: "0x0000000000000000000000000000000000000001" })).to.equal(true);
   });
 });

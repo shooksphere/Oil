@@ -80,6 +80,7 @@ Set these under **Settings → Secrets and variables → Actions**:
 | `ETHERSCAN_API_KEY` | For automatic source verification |
 | `OWNER_ADDRESS` | Optional constructor owner override (mainnet defaults to `0x4F2D58cA77f6efb7154B181ca1da05E923E31fFA`) |
 | `PETRO_CONTRACT_ADDRESS` | Optional Petro contract used to allowlist the deployed Entropy target |
+| `PETRO_ADMIN_PRIVATE_KEY` | Optional Petro owner/admin key for allowlist configuration (falls back to `PRIVATE_KEY`) |
 
 Deployments are sponsored in CI: gas is paid by the dedicated deployer key stored in GitHub Actions secrets, not by end users.
 
@@ -116,6 +117,7 @@ Optional Petro sponsorship mode in the same script:
 ```bash
 PETRO_CONTRACT_ADDRESS=0xPetroAddress
 PETRO_SPONSOR_PRIVATE_KEY=0x...
+PETRO_EXECUTOR_PRIVATE_KEY=0x...   # optional; defaults to relayer signer
 PETRO_MAX_COST=1000000000000000
 PETRO_CALL_DEADLINE=1789398000
 ```

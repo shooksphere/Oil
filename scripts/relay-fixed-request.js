@@ -28,6 +28,9 @@ const PETRO_SPONSORED_CALL_TYPES = {
 function parseUintEnv(name) {
   const raw = process.env[name];
   if (!raw) throw new Error(`Missing ${name}`);
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`${name} must be a positive integer in base-10 string form`);
+  }
 
   try {
     const value = BigInt(raw);
@@ -39,8 +42,14 @@ function parseUintEnv(name) {
 }
 
 function parseOptionalUintEnv(name) {
-  const raw = process.env[name];
+  return parseOptionalUint(process.env[name], name);
+}
+
+function parseOptionalUint(raw, name) {
   if (!raw) return null;
+  if (!/^\d+$/.test(raw)) {
+    throw new Error(`${name} must be a positive integer in base-10 string form`);
+  }
   try {
     const value = BigInt(raw);
     if (value <= 0n) throw new Error();
@@ -70,6 +79,10 @@ function buildPetroTypedData(chainId, petroAddress, request) {
       deadline: request.deadline,
     },
   };
+}
+
+function isPetroModeEnabled(env = process.env) {
+  return Boolean(env.PETRO_CONTRACT_ADDRESS);
 }
 
 async function main() {
@@ -122,7 +135,7 @@ async function main() {
   const petroCallDeadline = parseOptionalUintEnv("PETRO_CALL_DEADLINE");
   let tx;
 
-  if (petroAddress) {
+  if (isPetroModeEnabled()) {
     if (!process.env.PETRO_SPONSOR_PRIVATE_KEY) {
       throw new Error("Missing PETRO_SPONSOR_PRIVATE_KEY");
     }
@@ -132,8 +145,11 @@ async function main() {
       throw new Error(`PETRO_CALL_DEADLINE must be greater than latest block timestamp (${latestBlock.timestamp})`);
     }
 
-    const petro = new hre.ethers.Contract(petroAddress, PETRO_ABI, signer);
     const sponsorWallet = new hre.ethers.Wallet(process.env.PETRO_SPONSOR_PRIVATE_KEY, provider);
+    const executorWallet = process.env.PETRO_EXECUTOR_PRIVATE_KEY
+      ? new hre.ethers.Wallet(process.env.PETRO_EXECUTOR_PRIVATE_KEY, provider)
+      : signer;
+    const petro = new hre.ethers.Contract(petroAddress, PETRO_ABI, executorWallet);
     const sponsor = sponsorWallet.address;
     const user = process.env.PETRO_USER || signer.address;
     const nonce = await petro.nonces(sponsor);
@@ -155,6 +171,7 @@ async function main() {
 
     tx = await petro.executeSponsoredCall(request, signature);
     console.log("using Petro sponsor:", sponsor);
+    console.log("using Petro executor:", await executorWallet.getAddress());
     console.log("Petro maxCost:", petroMaxCost.toString());
     console.log("Petro call deadline:", petroCallDeadline.toString(), "(unix seconds UTC)");
   } else {
@@ -215,4 +232,6 @@ if (require.main === module) {
 
 module.exports = {
   buildPetroTypedData,
+  parseOptionalUint,
+  isPetroModeEnabled,
 };
