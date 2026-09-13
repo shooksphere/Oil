@@ -2,6 +2,7 @@ const { expect } = require("chai");
 const {
   resolveOwnerAddress,
   resolvePetroSelectorConfig,
+  resolvePetroSubmitSelectorSetting,
   resolvePetroSigner,
   DEFAULT_MAINNET_OWNER,
   DEFAULT_OWNER,
@@ -39,6 +40,21 @@ describe("deploy script owner resolution", function () {
       enableSelectorAllowlist: true,
       allowSubmitSelector: false,
     });
+  });
+
+  it("derives Petro submit selector updates from env", async function () {
+    expect(resolvePetroSubmitSelectorSetting({})).to.equal(null);
+    expect(
+      resolvePetroSubmitSelectorSetting({
+        PETRO_ENABLE_SELECTOR_ALLOWLIST: "true",
+      })
+    ).to.equal(true);
+    expect(
+      resolvePetroSubmitSelectorSetting({
+        PETRO_ENABLE_SELECTOR_ALLOWLIST: "true",
+        PETRO_ALLOW_SUBMIT_SELECTOR: "false",
+      })
+    ).to.equal(false);
   });
 
   it("uses PETRO_ADMIN_PRIVATE_KEY when provided", async function () {
