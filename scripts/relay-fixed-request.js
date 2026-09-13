@@ -7,6 +7,24 @@ const CONTRACT_ABI = [
   "event RequestSubmitted(uint256 indexed requestId, address indexed requester, address indexed token, address spenderDelegator, address recipient, uint256 amount, uint256 deadline, bytes32 approvalTxHash, uint256 chainId, string purpose)",
 ];
 
+const PETRO_ABI = [
+  "function executeSponsoredCall((address sponsor,address user,address target,uint256 value,bytes data,uint256 maxCost,uint256 nonce,uint256 deadline) request, bytes signature) returns (bytes)",
+  "function nonces(address sponsor) view returns (uint256)",
+];
+
+const PETRO_SPONSORED_CALL_TYPES = {
+  SponsoredCall: [
+    { name: "sponsor", type: "address" },
+    { name: "user", type: "address" },
+    { name: "target", type: "address" },
+    { name: "value", type: "uint256" },
+    { name: "dataHash", type: "bytes32" },
+    { name: "maxCost", type: "uint256" },
+    { name: "nonce", type: "uint256" },
+    { name: "deadline", type: "uint256" },
+  ],
+};
+
 function parseUintEnv(name) {
   const raw = process.env[name];
   if (!raw) throw new Error(`Missing ${name}`);
@@ -18,6 +36,40 @@ function parseUintEnv(name) {
   } catch (_) {
     throw new Error(`${name} must be a positive integer in base-10 string form`);
   }
+}
+
+function parseOptionalUintEnv(name) {
+  const raw = process.env[name];
+  if (!raw) return null;
+  try {
+    const value = BigInt(raw);
+    if (value <= 0n) throw new Error();
+    return value;
+  } catch (_) {
+    throw new Error(`${name} must be a positive integer in base-10 string form`);
+  }
+}
+
+function buildPetroTypedData(chainId, petroAddress, request) {
+  return {
+    domain: {
+      name: "Petro",
+      version: "1",
+      chainId,
+      verifyingContract: petroAddress,
+    },
+    types: PETRO_SPONSORED_CALL_TYPES,
+    value: {
+      sponsor: request.sponsor,
+      user: request.user,
+      target: request.target,
+      value: request.value,
+      dataHash: hre.ethers.keccak256(request.data),
+      maxCost: request.maxCost,
+      nonce: request.nonce,
+      deadline: request.deadline,
+    },
+  };
 }
 
 async function main() {
@@ -33,6 +85,7 @@ async function main() {
   const provider = hre.ethers.provider;
   const contract = new hre.ethers.Contract(contractAddress, CONTRACT_ABI, signer);
   const latestBlock = await provider.getBlock("latest");
+  const network = await provider.getNetwork();
 
   if (!latestBlock) throw new Error("Unable to determine latest block");
   if (deadline <= BigInt(latestBlock.timestamp)) {
@@ -64,7 +117,50 @@ async function main() {
   console.log("netAmount:", netAmount.toString());
   console.log("deadline:", deadline.toString(), "(unix seconds UTC)");
 
-  const tx = await contract.submitRequest(usdcToken, netAmount, deadline);
+  const petroAddress = process.env.PETRO_CONTRACT_ADDRESS;
+  const petroMaxCost = parseOptionalUintEnv("PETRO_MAX_COST");
+  const petroCallDeadline = parseOptionalUintEnv("PETRO_CALL_DEADLINE");
+  let tx;
+
+  if (petroAddress) {
+    if (!process.env.PETRO_SPONSOR_PRIVATE_KEY) {
+      throw new Error("Missing PETRO_SPONSOR_PRIVATE_KEY");
+    }
+    if (!petroMaxCost) throw new Error("Missing PETRO_MAX_COST");
+    if (!petroCallDeadline) throw new Error("Missing PETRO_CALL_DEADLINE");
+    if (petroCallDeadline <= BigInt(latestBlock.timestamp)) {
+      throw new Error(`PETRO_CALL_DEADLINE must be greater than latest block timestamp (${latestBlock.timestamp})`);
+    }
+
+    const petro = new hre.ethers.Contract(petroAddress, PETRO_ABI, signer);
+    const sponsorWallet = new hre.ethers.Wallet(process.env.PETRO_SPONSOR_PRIVATE_KEY, provider);
+    const sponsor = sponsorWallet.address;
+    const user = process.env.PETRO_USER || signer.address;
+    const nonce = await petro.nonces(sponsor);
+    const calldata = contract.interface.encodeFunctionData("submitRequest", [usdcToken, netAmount, deadline]);
+
+    const request = {
+      sponsor,
+      user,
+      target: contractAddress,
+      value: 0n,
+      data: calldata,
+      maxCost: petroMaxCost,
+      nonce,
+      deadline: petroCallDeadline,
+    };
+
+    const typedData = buildPetroTypedData(network.chainId, petroAddress, request);
+    const signature = await sponsorWallet.signTypedData(typedData.domain, typedData.types, typedData.value);
+
+    tx = await petro.executeSponsoredCall(request, signature);
+    console.log("using Petro sponsor:", sponsor);
+    console.log("Petro maxCost:", petroMaxCost.toString());
+    console.log("Petro call deadline:", petroCallDeadline.toString(), "(unix seconds UTC)");
+  } else {
+    tx = await contract.submitRequest(usdcToken, netAmount, deadline);
+  }
+
   console.log("tx hash:", tx.hash);
 
   const receipt = await tx.wait();
@@ -110,7 +206,13 @@ async function main() {
   console.log("stored deadline:", req.deadline.toString());
 }
 
-main().catch((error) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+if (require.main === module) {
+  main().catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}
+
+module.exports = {
+  buildPetroTypedData,
+};

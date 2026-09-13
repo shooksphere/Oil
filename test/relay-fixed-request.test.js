@@ -1,4 +1,5 @@
 const { expect } = require("chai");
+const { buildPetroTypedData } = require("../scripts/relay-fixed-request");
 
 describe("relay-fixed-request helpers", function () {
   it("derives requestId from RequestSubmitted event logs", async function () {
@@ -12,7 +13,7 @@ describe("relay-fixed-request helpers", function () {
     const spenderDelegator = "0x0000000000000000000000000000000000000002";
     const recipient = "0x0000000000000000000000000000000000000003";
     const amount = 123456789n;
-    const deadline = 1789135200n;
+    const deadline = 1789394400n;
     const approvalTxHash = "0x6387457c5600500934253031a1356f8c61f48ed9d891da1385551cde629c1181";
     const chainId = 11155111n;
     const purpose = "transfer/trade with metamask eip-7702 delegator";
@@ -38,5 +39,26 @@ describe("relay-fixed-request helpers", function () {
     expect(parsed.args.token).to.equal(token);
     expect(parsed.args.amount).to.equal(amount);
     expect(parsed.args.deadline).to.equal(deadline);
+  });
+
+  it("builds Petro typed data with hashed calldata", async function () {
+    const data = "0x12345678";
+    const request = {
+      sponsor: "0x0000000000000000000000000000000000000004",
+      user: "0x0000000000000000000000000000000000000005",
+      target: "0x0000000000000000000000000000000000000006",
+      value: 0n,
+      data,
+      maxCost: 1000000000000000n,
+      nonce: 3n,
+      deadline: 1789394400n,
+    };
+
+    const typedData = buildPetroTypedData(1n, "0x0000000000000000000000000000000000000007", request);
+
+    expect(typedData.domain.name).to.equal("Petro");
+    expect(typedData.domain.version).to.equal("1");
+    expect(typedData.value.dataHash).to.equal(ethers.keccak256(data));
+    expect(typedData.value.deadline).to.equal(request.deadline);
   });
 });
