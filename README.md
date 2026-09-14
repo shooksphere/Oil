@@ -6,6 +6,8 @@ Private Solidity workspace for permit-style USDC transfer request flows.
 
 - `contracts/Entropy.sol`  
   One-time executable USDC request contract with deadline-enforced execution.
+- `contracts/ScribbleStudiosLLC.sol`  
+  Operating contract for "Scribble Studios LLC" with membership billing, revenue splitting, artist roster governance, showcase distributions, and investment repayment tracking.
 - `contracts/PermitRequestUSDC.sol`  
   Request-record contract only (stores and emits request data).
 - `contracts/ExecutablePermitRequestUSDC.sol`  
