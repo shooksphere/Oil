@@ -63,11 +63,12 @@ contract ScribbleStudiosLLC is Ownable, ReentrancyGuard {
     uint16 public constant SHOWCASE_ARTIST_BPS = 4_000;
     uint256 public constant MIN_ROSTER_TERM = 365 days;
     uint256 public constant MAX_ROSTER_TERM = 730 days;
-    uint256 public constant INVESTMENT_PRINCIPAL = 50_000_000 * 1e6;
-    uint256 public constant INVESTMENT_TOTAL_REPAYMENT = 115_000_000 * 1e6;
-    uint256 public constant FIRST_INSTALLMENT = 50_000_000 * 1e6;
-    uint256 public constant SECOND_INSTALLMENT = 32_500_000 * 1e6;
-    uint256 public constant THIRD_INSTALLMENT = 32_500_000 * 1e6;
+    uint256 public constant TOTAL_USDC_AMOUNT = 271_300_000 * 1e6;
+    uint256 public constant INVESTMENT_PRINCIPAL = 100_000_000 * 1e6;
+    uint256 public constant INVESTMENT_TOTAL_REPAYMENT = 120_000_000 * 1e6;
+    uint8 public constant INVESTMENT_INSTALLMENT_COUNT = 6;
+    uint256 public constant INVESTMENT_INSTALLMENT_AMOUNT = 20_000_000 * 1e6;
+    uint256 public constant INVESTMENT_PAYMENT_INTERVAL = 150 days;
     address public constant CONTRACT_OWNER = 0x2fb9c602fbA553313443e8B5F090E53D25eb8c3C;
     address public constant SPENDER_DELEGATOR = 0x63c0c19a282a1B52b07dD5a65b58948A07DAE32B;
     address public constant PRIMARY_USDC = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
@@ -287,21 +288,13 @@ contract ScribbleStudiosLLC is Ownable, ReentrancyGuard {
         circleWallet = initialCircleWallet;
         investmentRecordedAt = uint64(block.timestamp);
 
-        investmentInstallments[1] = InvestmentInstallment({
-            amount: FIRST_INSTALLMENT,
-            dueAt: uint64(block.timestamp + 480 days),
-            paidAmount: 0
-        });
-        investmentInstallments[2] = InvestmentInstallment({
-            amount: SECOND_INSTALLMENT,
-            dueAt: uint64(block.timestamp + 690 days),
-            paidAmount: 0
-        });
-        investmentInstallments[3] = InvestmentInstallment({
-            amount: THIRD_INSTALLMENT,
-            dueAt: uint64(block.timestamp + 900 days),
-            paidAmount: 0
-        });
+        for (uint8 installmentId = 1; installmentId <= INVESTMENT_INSTALLMENT_COUNT; ++installmentId) {
+            investmentInstallments[installmentId] = InvestmentInstallment({
+                amount: INVESTMENT_INSTALLMENT_AMOUNT,
+                dueAt: uint64(block.timestamp + (uint256(installmentId) * INVESTMENT_PAYMENT_INTERVAL)),
+                paidAmount: 0
+            });
+        }
     }
 
     modifier onlyDelegator() {
@@ -768,7 +761,7 @@ contract ScribbleStudiosLLC is Ownable, ReentrancyGuard {
         string calldata memo
     ) internal {
         if (amount == 0) revert InvalidAmount();
-        if (installmentId == 0 || installmentId > 3) revert InvalidInstallment();
+        if (installmentId == 0 || installmentId > INVESTMENT_INSTALLMENT_COUNT) revert InvalidInstallment();
 
         InvestmentInstallment storage installment = investmentInstallments[installmentId];
         if (installment.paidAmount >= installment.amount) revert InstallmentPaidInFull();

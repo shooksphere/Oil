@@ -195,7 +195,7 @@ describe("ScribbleStudiosLLC", function () {
   it("tracks standard revenue streams and investment repayments against the recorded schedule", async function () {
     const { contract, usdc, owner, payer, circle } = await deployFixture();
     const apparelRevenue = 500n * SIX_DECIMALS;
-    const firstInstallment = 50_000_000n * SIX_DECIMALS;
+    const firstInstallment = 20_000_000n * SIX_DECIMALS;
 
     await contract.connect(owner).setCircleWallet(circle.address);
 
@@ -213,11 +213,19 @@ describe("ScribbleStudiosLLC", function () {
     await usdc.connect(owner).approve(await contract.getAddress(), firstInstallment);
     await contract.connect(owner).recordInvestmentRepayment(1, 3, firstInstallment, "Memberships, apparel, events, tech");
 
-    const installment = await contract.investmentInstallments(1);
-    expect(installment.amount).to.equal(firstInstallment);
-    expect(installment.paidAmount).to.equal(firstInstallment);
+    const installmentOne = await contract.investmentInstallments(1);
+    const installmentSix = await contract.investmentInstallments(6);
+    expect(await contract.TOTAL_USDC_AMOUNT()).to.equal(271_300_000n * SIX_DECIMALS);
+    expect(await contract.INVESTMENT_PRINCIPAL()).to.equal(100_000_000n * SIX_DECIMALS);
+    expect(await contract.INVESTMENT_TOTAL_REPAYMENT()).to.equal(120_000_000n * SIX_DECIMALS);
+    expect(await contract.INVESTMENT_INSTALLMENT_COUNT()).to.equal(6n);
+    expect(installmentOne.amount).to.equal(firstInstallment);
+    expect(installmentOne.paidAmount).to.equal(firstInstallment);
+    expect(installmentSix.amount).to.equal(firstInstallment);
+    expect(installmentSix.paidAmount).to.equal(0n);
+    expect(installmentSix.dueAt - installmentOne.dueAt).to.equal(150n * 24n * 60n * 60n * 5n);
     expect(await contract.totalInvestmentRepaid()).to.equal(firstInstallment);
-    expect(await contract.outstandingInvestmentBalance()).to.equal(65_000_000n * SIX_DECIMALS);
+    expect(await contract.outstandingInvestmentBalance()).to.equal(100_000_000n * SIX_DECIMALS);
     expect(await usdc.balanceOf(circle.address)).to.equal(apparelSplit.circle + firstInstallment);
   });
 });
