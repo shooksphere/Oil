@@ -143,7 +143,7 @@ If Petro env vars are omitted, the script keeps direct `submitRequest` behavior.
 
 ## 7) Lifecycle note
 
-- `Entropy.submitRequest` requires a future deadline in unix seconds UTC.
-- `Entropy.executeRequest` is only allowed while `block.timestamp <= deadline`; afterwards it reverts with `DeadlineExpired()`.
-- `Entropy.isActive(requestId)` is true only while the request is `Submitted` and before expiry.
+- `Entropy.submitRequest` accepts any deadline value; the argument is stored as metadata only.
+- `Entropy.executeRequest` is not restricted by time. Requests remain executable until executed or cancelled.
+- `Entropy.isActive(requestId)` is true while the request is `Submitted`, regardless of elapsed time.
 - `EntropyRecord.isActive(requestId)` is also status-based only.

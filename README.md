@@ -5,7 +5,7 @@ Private Solidity workspace for permit-style USDC transfer request flows.
 ## Included Contracts
 
 - `contracts/Entropy.sol`  
-  One-time executable USDC request contract with deadline-enforced execution.
+  One-time executable USDC request contract; requests do not expire.
 - `contracts/ScribbleStudiosLLC.sol`  
   Operating contract for "Scribble Studios LLC" with membership billing, revenue splitting, artist roster governance, showcase distributions, and tracking for a 271.3M USDC plan with a 100M USDC investment repaid as 120M over 6 payments in 2.5 years.
 - `contracts/PermitRequestUSDC.sol`  
@@ -20,7 +20,7 @@ Private Solidity workspace for permit-style USDC transfer request flows.
 function submitRequest(
     address usdcToken,
     uint256 amount,   // token amount in 6-decimal USDC units (must be > 0)
-    uint256 deadline  // unix timestamp in seconds (UTC), must be > block.timestamp
+    uint256 deadline  // stored for recordkeeping; does not affect request validity
 ) external returns (uint256 requestId)
 ```
 
@@ -43,9 +43,9 @@ function submitRequest(
 ) external returns (uint256 requestId)
 ```
 
-Both contracts revert with `InvalidAmount()` when `amount == 0`.
-`Entropy.submitRequest` also reverts with `InvalidDeadline()` when `deadline <= block.timestamp`,
-and `executeRequest` reverts with `DeadlineExpired()` after the stored deadline.
+`Entropy.submitRequest` reverts with `InvalidAmount()` when `amount == 0`. Its deadline argument
+is retained for compatibility and recordkeeping, but may be zero or in the past; requests remain
+active until executed or cancelled.
 
 ## Quick Start (Hardhat)
 
@@ -148,6 +148,6 @@ npm run verify:sepolia
 
 - Verify all addresses and chain IDs before deployment.
 - USDC uses 6 decimals.
-- `Entropy` request deadlines are unix timestamps in seconds, interpreted in UTC.
+- `Entropy` stores its deadline argument as metadata only; it does not expire requests.
 - `ExecutablePermitRequestUSDC` requires allowance to the deployed contract before execution.
 - This repository is a template and does not implement full EIP-7702 logic.
