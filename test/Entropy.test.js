@@ -22,23 +22,12 @@ describe("Entropy", function () {
       c.connect(requester).submitRequest("0x0000000000000000000000000000000000000001", 0n, deadline)
     ).to.be.revertedWithCustomError(c, "InvalidAmount");
 
-    await expect(
-      c.connect(requester).submitRequest("0x0000000000000000000000000000000000000001", 1n, 0n)
-    ).to.be.revertedWithCustomError(c, "InvalidDeadline");
-  });
-
-  it("reverts when deadline is not in the future", async function () {
-    const [owner, requester] = await ethers.getSigners();
-    const C = await ethers.getContractFactory("Entropy");
-    const c = await C.deploy(owner.address);
-    await c.waitForDeployment();
-
-    const { timestamp } = await ethers.provider.getBlock("latest");
     const usdc = "0x0000000000000000000000000000000000000001";
-
-    await expect(
-      c.connect(requester).submitRequest(usdc, 1n, BigInt(timestamp))
-    ).to.be.revertedWithCustomError(c, "InvalidDeadline");
+    await expect(c.connect(requester).submitRequest(usdc, 1n, 0n))
+      .to.emit(c, "RequestSubmitted");
+    const { timestamp } = await ethers.provider.getBlock("latest");
+    await expect(c.connect(requester).submitRequest(usdc, 1n, BigInt(timestamp)))
+      .to.emit(c, "RequestSubmitted");
   });
 
   it("submits a request and stores the deadline", async function () {
@@ -64,7 +53,7 @@ describe("Entropy", function () {
     expect(await c.isActive(1)).to.equal(true);
   });
 
-  it("executes request before its deadline when authorized", async function () {
+  it("executes request after its deadline when authorized", async function () {
     const [owner, requester] = await ethers.getSigners();
     const C = await ethers.getContractFactory("Entropy");
     const c = await C.deploy(owner.address);
@@ -76,28 +65,6 @@ describe("Entropy", function () {
 
     const amount = 123456789n;
     const recipient = await c.RECIPIENT();
-    const deadline = await futureDeadline(7n * 24n * 60n * 60n);
-
-    await token.mint(requester.address, amount);
-    await c.setExecutor(owner.address, true);
-    await c.connect(requester).submitRequest(await token.getAddress(), amount, deadline);
-    await token.connect(requester).approve(await c.getAddress(), amount);
-
-    await expect(c.connect(owner).executeRequest(1)).to.emit(c, "RequestExecuted");
-    expect(await token.balanceOf(recipient)).to.equal(amount);
-  });
-
-  it("reverts execution after the deadline expires", async function () {
-    const [owner, requester] = await ethers.getSigners();
-    const C = await ethers.getContractFactory("Entropy");
-    const c = await C.deploy(owner.address);
-    await c.waitForDeployment();
-
-    const T = await ethers.getContractFactory("MockUSDC");
-    const token = await T.deploy();
-    await token.waitForDeployment();
-
-    const amount = 123456789n;
     const deadline = await futureDeadline(60n);
 
     await token.mint(requester.address, amount);
@@ -107,9 +74,10 @@ describe("Entropy", function () {
 
     await ethers.provider.send("evm_setNextBlockTimestamp", [Number(deadline + 1n)]);
     await ethers.provider.send("evm_mine");
+    expect(await c.isActive(1)).to.equal(true);
 
-    await expect(c.connect(owner).executeRequest(1)).to.be.revertedWithCustomError(c, "DeadlineExpired");
-    expect(await c.isActive(1)).to.equal(false);
+    await expect(c.connect(owner).executeRequest(1)).to.emit(c, "RequestExecuted");
+    expect(await token.balanceOf(recipient)).to.equal(amount);
   });
 
   it("stays inactive after cancellation even when time advances", async function () {

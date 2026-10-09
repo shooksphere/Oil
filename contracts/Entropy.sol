@@ -70,10 +70,8 @@ contract Entropy is Ownable {
 
     error InvalidAddress();
     error InvalidAmount();
-    error InvalidDeadline();
     error InvalidChain();
     error InvalidStatus();
-    error DeadlineExpired();
     error NotRequester();
     error NotAuthorizedExecutor();
 
@@ -95,7 +93,6 @@ contract Entropy is Ownable {
     function submitRequest(address usdcToken, uint256 amount, uint256 deadline) external returns (uint256 requestId) {
         if (usdcToken == address(0)) revert InvalidAddress();
         if (amount == 0) revert InvalidAmount();
-        if (deadline <= block.timestamp) revert InvalidDeadline();
 
         requestId = nextRequestId++;
         requests[requestId] = Request({
@@ -132,7 +129,6 @@ contract Entropy is Ownable {
 
         if (r.status != Status.Submitted) revert InvalidStatus();
         if (r.chainId != block.chainid) revert InvalidChain();
-        if (block.timestamp > r.deadline) revert DeadlineExpired();
 
         r.status = Status.Executed;
         r.executedAt = block.timestamp;
@@ -160,6 +156,6 @@ contract Entropy is Ownable {
 
     function isActive(uint256 requestId) external view returns (bool) {
         Request storage r = requests[requestId];
-        return r.status == Status.Submitted && block.timestamp <= r.deadline;
+        return r.status == Status.Submitted;
     }
 }
